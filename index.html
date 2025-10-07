@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Birthday Boy Hours</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Emilys+Candy&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="playfield"></div>
+
+  <!-- audio: put party.mp3 next to index.html -->
+  <audio id="song" src="renai-circulation-full-original-bakemonogatari-op_eGaxmNZm(1).mp3" preload="auto"></audio>
+
+  <div class="stack">
+    <div id="topMsg" class="msg">Happy Happy</div>
+    <button id="glitterBtn">sec</button>
+    <div id="bottomMsg" class="msg">Birthday Mat</div>
+  </div>
+
+ <script>
+  // --- config ---
+  const IMG_SRC = [
+    "images/Pi7_cropper(1).png","images/Pi7_cropper(2).png","images/Pi7_cropper(3).png","images/Pi7_cropper(4).png",
+    "images/Pi7_cropper(5).png","images/Pi7_cropper(6).png","images/Pi7_cropper(7).png","images/Pi7_cropper(8).png",
+    "images/Pi7_cropper(9).png","images/Pi7_cropper(10).png","images/Pi7_cropper(11).png","images/Pi7_cropper(12).png",
+    "images/Pi7_cropper(13).png","images/Pi7_cropper(14).png","images/Pi7_cropper(15).png","images/Pi7_cropper(16).png",
+    "images/Pi7_cropper(17).png","images/Pi7_cropper(18).png","images/Pi7_cropper(19).png","images/Pi7_cropper(20).png",
+    "images/Pi7_cropper(21).png","images/Pi7_cropper(22).png","images/Pi7_cropper(23).png","images/Pi7_cropper(24).png",
+    "images/Pi7_cropper(25).png","images/Pi7_cropper(26).png","images/Pi7_cropper(27).png","images/Pi7_cropper(28).png",
+    "images/Pi7_cropper(29).png","images/Pi7_cropper(30).png","images/Pi7_cropper(31).png","images/Pi7_cropper(32).png"
+  ];
+  const GRAVITY = 2000, BOUNCE = 0.65, FRICTION = 0.98;
+  const MIN_SIZE = 100, MAX_SIZE = 300, SPAWN_COUNT = 1;
+
+  // --- setup ---
+  const field = document.getElementById('playfield');
+  const btn   = document.getElementById('glitterBtn');
+  const song  = document.getElementById('song');
+  let W = field.clientWidth, H = field.clientHeight;
+  const bodies = [];
+
+  function r(a,b){ return Math.random()*(b-a)+a; }
+  function pick(a){ return a[(Math.random()*a.length)|0]; }
+
+  function spawnOne(){
+    const img = document.createElement('img');
+    img.src = pick(IMG_SRC);
+    img.className = 'animal';
+    const size = r(MIN_SIZE, MAX_SIZE);
+    img.style.width = size + 'px';
+    field.appendChild(img);
+
+    const w = size, h = size;
+    const x = r(0, Math.max(1, W - w));
+    const y = -h - r(200, 400);
+    const vx = r(-300, 300);
+    const vy = r(-200, 0);
+
+    bodies.push({ el: img, x, y, vx, vy, w, h });
+  }
+  function spawnMany(n=SPAWN_COUNT){ for(let i=0;i<n;i++) spawnOne(); }
+
+  // physics loop
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min(0.032, (now - last)/1000);
+    last = now;
+    for (const b of bodies){
+      b.vy += GRAVITY * dt;
+      b.x  += b.vx * dt;
+      b.y  += b.vy * dt;
+
+      if (b.x < 0){ b.x = 0; b.vx = -b.vx * BOUNCE * FRICTION; }
+      if (b.x + b.w > W){ b.x = W - b.w; b.vx = -b.vx * BOUNCE * FRICTION; }
+      if (b.y + b.h > H){
+        b.y = H - b.h;
+        b.vy = -b.vy * BOUNCE;
+        b.vx *= FRICTION;
+        if (Math.abs(b.vy) < 12) b.vy = 0;
+        if (Math.abs(b.vx) < 8)  b.vx = 0;
+      }
+      b.el.style.transform = `translate(${b.x}px, ${b.y}px)`;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // --- audio gating: disable button until audio is ready ---
+  btn.disabled = true;
+  function enableButton(){
+    if (btn.disabled){ btn.disabled = false; btn.textContent = 'click'; }
+  }
+  if (song.readyState >= 4) enableButton(); // HAVE_ENOUGH_DATA
+  song.addEventListener('canplaythrough', enableButton, { once: true });
+  setTimeout(enableButton, 4000); // fallback
+
+  // ---- song-synced bursts/rain (edit times to your song) ----
+  const BURSTS = [
+    { at: 8.9, count: 60 }, // change these
+    { at: 16.18, count: 30 },
+    { at: 16.42, count: 30 }
+    
+  ];
+  const RAIN_WINDOWS = [
+    { start: 40, end: 55.5, everyMs: 475, each: 1 },
+    { start: 56.3, end: 71, everyMs: 80, each: 2 },
+    { start: 72.2, end: 88, everyMs: 375, each: 2 } // heavy rain window
+  ];
+
+  const firedBursts = new Set();
+  let rainTimer = null;
+
+  function enterRain(win){ exitRain(); rainTimer = setInterval(() => spawnMany(win.each), win.everyMs); }
+  function exitRain(){ if (rainTimer){ clearInterval(rainTimer); rainTimer = null; } }
+  function activeWindow(t){ return RAIN_WINDOWS.find(w => t >= w.start && t < w.end) || null; }
+
+  song.addEventListener('timeupdate', () => {
+    const t = song.currentTime;
+
+    // one-off bursts
+    BURSTS.forEach((b, i) => {
+      if (!firedBursts.has(i) && t >= b.at){
+        spawnMany(b.count);
+        firedBursts.add(i);
+      }
+    });
+
+    // rain windows
+    const win = activeWindow(t);
+    if (win && !rainTimer) enterRain(win);
+    if (!win && rainTimer)  exitRain();
+  });
+  song.addEventListener('pause',  exitRain);
+  song.addEventListener('ended', () => { exitRain(); firedBursts.clear(); });
+
+  // click: glitter + spawn + text change + style + play (no reset)
+  let clicks = 0;
+  btn.addEventListener('click', () => {
+    clicks += 1;
+    const repeats = Math.max(0, clicks - 1);           // 0 on first click, then 1,2,3…
+    btn.textContent = `click${' again'.repeat(repeats)}`;
+
+    document.body.classList.add('glitter','show-texts');
+    spawnMany();
+
+    // DO NOT reset song time; only play if paused
+    if (song.paused) {
+      firedBursts.clear();   // restart schedule only when starting playback
+      exitRain();
+      try { song.play(); } catch (_) {}
+    }
+
+    btn.classList.add('btn--hotpink');
+  });
+
+  // resize
+  window.addEventListener('resize', () => {
+    W = field.clientWidth; H = field.clientHeight;
+  });
+</script>
+
+</body>
+</html>
+

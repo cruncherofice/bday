@@ -1,0 +1,86 @@
+html, body { height: 100%; }
+body{
+  margin: 0;
+  display: grid;
+  place-items: center;   /* centers the button */
+  overflow: hidden;      /* keep images inside viewport */
+  background: #fff;      /* default */
+}
+
+body.glitter{
+  background: url("pinkglitter.webp") center / cover no-repeat;
+}
+
+#playfield{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;  /* clicks go to the button */
+}
+
+.animal{
+  position: absolute;
+  left: 0; top: 0;
+  will-change: transform;
+  user-select: none;
+}
+
+button{
+  font-size: 1.125rem;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  z-index: 1;            /* above playfield */
+}
+
+button.btn--hotpink {
+  background-color: #ff1493;              /* hot pink */
+  font-family: "Emilys Candy", system-ui, sans-serif;
+  border-radius: 6%;
+  border-color: #ce006e;
+}
+
+
+
+.stack{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;        /* space between top text, button, bottom text */
+  z-index: 1;          /* above any background/overlay */
+  position: relative;
+}
+
+/* big messages, hidden by default */
+.msg{
+  visibility: hidden;      /* keeps space, no reflow */
+  pointer-events: none;
+  font-size: clamp(2rem, 6vw, 5rem);   /* large, responsive */
+  font-weight: 700;
+  color: #fff;                         /* readable on glitter */
+  text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* show them after click */
+.show-texts .msg{
+  visibility: visible;
+}
+
+#bottomMsg{
+  margin-top: clamp(3rem, 10vh, 14rem);      /* extra space below the button */
+  font-family: "Emilys Candy", cursive, system-ui, sans-serif;
+  font-weight: 400;                           /* Emily's Candy looks better at 400 */
+  font-size: clamp(4rem, 14vw, 16rem);        /* way bigger */
+  line-height: .9;
+  color: #ff1493;                             /* hot pink */
+  text-shadow: 0 3px 10px rgba(0,0,0,.45);    /* keep readable on glitter */
+}
+#topMsg{
+  margin-bottom: clamp(3rem, 10vh, 14rem);   /* space above the button */
+  font-family: "Emilys Candy", cursive, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(4rem, 12vw, 14rem);       /* big */
+  line-height: .9;
+  color: #ff1493;                             /* pink */
+  text-shadow: 0 3px 10px rgba(0,0,0,.45);
+}
